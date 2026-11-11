@@ -439,4 +439,85 @@ async def use_item(call: CallbackQuery):
     
     if not inv: await call.message.answer("🎒 Инвентарь пуст.")
     else:
-        kb_buttons = [[
+        kb_buttons = [[InlineKeyboardButton(text=f"{SHOP_ITEMS[i]['name']} (x{c})", callback_data=f"use_{i}")] for i, c in inv.items()]
+        await call.message.edit_reply_markup(reply_markup=InlineKeyboardMarkup(inline_keyboard=kb_buttons))
+
+# --- АДМИНКА ---
+@dp.message(Command("admin"))
+async def admin_panel(message: Message):
+    if message.from_user.id != ADMIN_ID: return
+    users = load_db()
+    if not users: return await message.answer("Игроков нет.")
+    
+    kb_buttons = []
+    for uid, data in users.items():
+        kb_buttons.append([InlineKeyboardButton(text=f"{data['pet_name']} | 🪙 {data['coins']}", callback_data=f"adm_{uid}")])
+    await message.answer("👑 **Админка**\nВыбери игрока:", reply_markup=InlineKeyboardMarkup(inline_keyboard=kb_buttons))
+
+@dp.callback_query(F.data.startswith("adm_"))
+async def admin_user(call: CallbackQuery):
+    if call.from_user.id != ADMIN_ID: return
+    target = call.data.replace("adm_", "")
+    kb = InlineKeyboardMarkup(inline_keyboard=[
+        [InlineKeyboardButton(text="+ 100 🪙", callback_data=f"gv_{target}_100")],
+        [InlineKeyboardButton(text="+ 500 🪙", callback_data=f"gv_{target}_500")],
+        [InlineKeyboardButton(text="✍️ Ввести свою сумму", callback_data=f"custom_give_{target}")],
+        [InlineKeyboardButton(text="⬅️ Назад", callback_data="admin_back")]
+    ])
+    await call.message.edit_text(f"Выбери действие для ID `{target}`:", reply_markup=kb, parse_mode="Markdown")
+
+@dp.callback_query(F.data == "admin_back")
+async def admin_back(call: CallbackQuery):
+    if call.from_user.id != ADMIN_ID: return
+    await admin_panel(call.message)
+
+@dp.callback_query(F.data.startswith("gv_"))
+async def admin_give(call: CallbackQuery):
+    if call.from_user.id != ADMIN_ID: return
+    parts = call.data.split("_")
+    target, amount = parts[1], int(parts[2])
+    users = load_db()
+    if target in users:
+        users[target]['coins'] += amount
+        save_db(users)
+        await call.answer(f"✅ Выдано {amount} монет!")
+        try: await bot.send_message(int(target), f"🎁 Вам переслано {amount} 🪙!")
+        except: pass
+        await admin_panel(call.message)
+
+@dp.callback_query(F.data.startswith("custom_give_"))
+async def custom_give_start(call: CallbackQuery, state: FSMContext):
+    if call.from_user.id != ADMIN_ID: return
+    target = call.data.replace("custom_give_", "")
+    await state.update_data(target_id=target)
+    await state.set_state(AdminState.waiting_for_amount)
+    await call.message.edit_text(f"✍️ Введи сумму монет для игрока (ID: `{target}`):", parse_mode="Markdown")
+    await call.answer()
+
+@dp.message(AdminState.waiting_for_amount)
+async def custom_give_amount(message: Message, state: FSMContext):
+    if message.from_user.id != ADMIN_ID: return
+    if not message.text.isdigit():
+        return await message.answer("❌ Ошибка! Введи только цифры.")
+        
+    amount = int(message.text)
+    data = await state.get_data()
+    target = data['target_id']
+    
+    users = load_db()
+    if target in users:
+        users[target]['coins'] += amount
+        save_db(users)
+        await message.answer(f"✅ Успешно выдано {amount} 🪙 игроку с ID `{target}`.")
+        try: await bot.send_message(int(target), f"🎁 Вам переслано {amount} 🪙!")
+        except: pass
+    else:
+        await message.answer("❌ Игрок не найден.")
+    await state.clear()
+
+async def main():
+    asyncio.create_task(background_worker())
+    await dp.start_polling(bot)
+
+if __name__ == "__main__":
+    asyncio.run(main())
