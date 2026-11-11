@@ -3,14 +3,11 @@ import random
 import json
 import os
 import time
-import io
-import ttf_opensans
 from datetime import datetime
 from zoneinfo import ZoneInfo
-from PIL import Image, ImageDraw, ImageFont
 from aiogram import Bot, Dispatcher, F
 from aiogram.filters import CommandStart, Command
-from aiogram.types import Message, CallbackQuery, ReplyKeyboardMarkup, KeyboardButton, InlineKeyboardMarkup, InlineKeyboardButton, BufferedInputFile
+from aiogram.types import Message, CallbackQuery, ReplyKeyboardMarkup, KeyboardButton, InlineKeyboardMarkup, InlineKeyboardButton
 from aiogram.fsm.context import FSMContext
 from aiogram.fsm.state import State, StatesGroup
 from aiogram.fsm.storage.memory import MemoryStorage
@@ -49,49 +46,9 @@ def save_db(data):
     except Exception as e:
         print(f"ОШИБКА СОХРАНЕНИЯ: {e}")
 
-# --- НАЛОЖЕНИЕ ТЕКСТА НА ФОТО ---
-async def make_card(photo_id, text, user_name):
-    try:
-        file = await bot.get_file(photo_id)
-        downloaded = await bot.download_file(file.file_path)
-        img = Image.open(downloaded).convert("RGBA")
-        img.thumbnail((800, 800))
-        
-        overlay = Image.new("RGBA", img.size, (0, 0, 0, 0))
-        draw = ImageDraw.Draw(overlay)
-        w, h = img.size
-        margin = 20
-        box_height = int(h * 0.35)
-        
-        # Черная плашка снизу
-        draw.rectangle([(0, h - box_height), (w, h)], fill=(0, 0, 0, 200))
-        
-        # Загружаем встроенный шрифт
-        try:
-            font = ttf_opensans.OPENSANS_SEMIBOLD.imagefont(size=26)
-        except:
-            font = ImageFont.load_default()
-            
-        out = Image.alpha_composite(img, overlay)
-        draw_out = ImageDraw.Draw(out)
-        
-        # Имя белым
-        draw_out.text((margin, h - box_height + 15), user_name, font=font, fill="white")
-        
-        # Характеристики серым
-        lines = text.split("\n")
-        y_offset = h - box_height + 55
-        for line in lines:
-            draw_out.text((margin, y_offset), line, font=font, fill=(230, 230, 230))
-            y_offset += 32
-            
-        bio = io.BytesIO()
-        out.convert("RGB").save(bio, format="JPEG", quality=90)
-        bio.seek(0)
-        return BufferedInputFile(bio.read(), filename="card.jpg")
-    except Exception as e:
-        print(f"Ошибка генерации картинки: {e}")
-        return None
+# --- ПРОСТЫЕ ПРОЦЕНТЫ (БЕЗ КВАДРАТИКОВ) ---
+def draw_text_bar(value):
+    return f"{value}%"
 
 def get_stats_text(user):
     age = int(((time.time() - user.get('birth_date', time.time())) / 86400) / 2)
@@ -100,10 +57,15 @@ def get_stats_text(user):
     xp_needed = lvl * 100
     
     text = (
-        f"Возраст: {age} лет  |  Ур. {lvl}  |  Монеты: {user['coins']}\n"
-        f"Опыт: {xp}/{xp_needed}\n"
-        f"Сытость: {user['hunger']}%  |  Жажда: {user['thirst']}%\n"
-        f"Энергия: {user['energy']}%  |  Настроение: {user['mood']}%"
+        f"👤 **{user['pet_name']}**\n"
+        f"🎂 Возраст: {age} лет | ⭐ Уровень: {lvl}\n"
+        f"🪙 Монеты: {user['coins']}\n"
+        f"📈 Опыт: {xp}/{xp_needed}\n"
+        f"👗 Надето: {user.get('wearing', 'Ничего')}\n\n"
+        f"🍔 Сытость: {draw_text_bar(user['hunger'])}\n"
+        f"💧 Жажда: {draw_text_bar(user['thirst'])}\n"
+        f"⚡ Энергия: {draw_text_bar(user['energy'])}\n"
+        f"🎾 Настроение: {draw_text_bar(user['mood'])}"
     )
     return text
 
@@ -138,15 +100,59 @@ def get_main_keyboard():
     ]
     return ReplyKeyboardMarkup(keyboard=kb, resize_keyboard=True)
 
+# --- ОГРОМНЫЙ АССОРТИМЕНТ (ВОЗВРАЩЕН) ---
 SHOP_ITEMS = {
+    # ЕДА
     "apple": {"name": "🍎 Яблоко", "price": 15, "effect": "hunger", "value": 10, "text": "🍎 [Имя] берет яблоко...", "end": "✨ Сочное!"},
     "burger": {"name": "🍔 Бургер", "price": 40, "effect": "hunger", "value": 30, "text": "🍔 [Имя] ест бургер...", "end": "✨ Обожаю фастфуд!"},
+    "pizza": {"name": "🍕 Пицца", "price": 80, "effect": "hunger", "value": 50, "text": "🍕 [Имя] ест пиццу...", "end": "✨ Сыр тянется!"},
+    "sushi": {"name": "🍣 Суши", "price": 100, "effect": "hunger", "value": 60, "text": "🍣 [Имя] ест суши...", "end": "✨ Васаби!"},
+    "taco": {"name": "🌮 Тако", "price": 50, "effect": "hunger", "value": 35, "text": "🌮 [Имя] ест тако...", "end": "✨ Остро!"},
+    "donut": {"name": "🍩 Пончик", "price": 25, "effect": "hunger", "value": 15, "text": "🍩 [Имя] ест пончик...", "end": "✨ Сладко!"},
+    "steak": {"name": "🥩 Стейк", "price": 150, "effect": "hunger", "value": 80, "text": "🥩 [Имя] ест стейк...", "end": "✨ Мясо!"},
+    "salad": {"name": "🥗 Салат", "price": 30, "effect": "hunger", "value": 20, "text": "🥗 [Имя] ест салат...", "end": "✨ Полезно!"},
+    "cake": {"name": "🍰 Тортик", "price": 60, "effect": "hunger", "value": 40, "text": "🍰 [Имя] ест тортик...", "end": "✨ Сладко!"},
+    "chocolate": {"name": "🍫 Шоколад", "price": 20, "effect": "hunger", "value": 10, "text": "🍫 [Имя] ест шоколад...", "end": "✨ Вкусно!"},
+    
+    # ВОДА
     "water": {"name": "🥛 Вода", "price": 10, "effect": "thirst", "value": 15, "text": "🥛 [Имя] пьет воду...", "end": "✨ Освежает!"},
-    "cola": {"name": "🥤 Кола", "price": 25, "effect": "thirst", "value": 25, "text": "🥤 [Имя] открывает колу...", "end": "✨ Пузырьки в носу!"},
-    "beer": {"name": "🍺 Пиво", "price": 60, "effect": "mood", "value": 20, "text": "🍺 [Имя] открывает пиво...", "end": "✨ Хи-хи, я опьянел!"},
-    "whiskey": {"name": "🥃 Виски", "price": 300, "effect": "mood", "value": 60, "text": "🥃 [Имя] наливает виски...", "end": "✨ Я аристократ!"},
-    "hat": {"name": "🎩 Шляпа", "price": 150, "effect": "wear", "value": 1, "text": "🎩 [Имя] надевает шляпу...", "end": "✨ Какой стильный!"},
-    "glasses": {"name": "🕶 Очки", "price": 200, "effect": "wear", "value": 1, "text": "🕶 [Имя] надевает очки...", "end": "✨ Очень модно!"},
+    "cola": {"name": "🥤 Кола", "price": 25, "effect": "thirst", "value": 25, "text": "🥤 [Имя] пьет колу...", "end": "✨ Пузырьки!"},
+    "pepsi": {"name": "🥤 Пепси", "price": 25, "effect": "thirst", "value": 25, "text": "🥤 [Имя] пьет пепси...", "end": "✨ Классика!"},
+    "juice": {"name": "🧃 Сок", "price": 30, "effect": "thirst", "value": 30, "text": "🧃 [Имя] пьет сок...", "end": "✨ Витамины!"},
+    "coffee": {"name": "☕ Кофе", "price": 40, "effect": "thirst", "value": 20, "text": "☕ [Имя] пьет кофе...", "end": "✨ Проснулся!"},
+    "tea": {"name": "🍵 Чай", "price": 20, "effect": "thirst", "value": 15, "text": "🍵 [Имя] пьет чай...", "end": "✨ Уютно!"},
+    "energy": {"name": "⚡ Энергетик", "price": 50, "effect": "thirst", "value": 50, "text": "⚡ [Имя] пьет энергетик...", "end": "✨ Горы сверну!"},
+    "milkshake": {"name": "🥤 Милкшейк", "price": 60, "effect": "thirst", "value": 40, "text": "🥤 [Имя] пьет милкшейк...", "end": "✨ Ням!"},
+    "lemonade": {"name": "🍋 Лимонад", "price": 35, "effect": "thirst", "value": 30, "text": "🍋 [Имя] пьет лимонад...", "end": "✨ Кисло-сладко!"},
+    "smoothie": {"name": "🍹 Смузи", "price": 70, "effect": "thirst", "value": 45, "text": "🍹 [Имя] пьет смузи...", "end": "✨ Полезно!"},
+
+    # МЕДИЦИНА
+    "pill": {"name": "💊 Таблетка", "price": 100, "effect": "heal", "value": 1, "text": "💊 [Имя] пьет таблетку...", "end": "✨ Здоров!"},
+    "bandage": {"name": "🩹 Бинт", "price": 50, "effect": "heal", "value": 1, "text": "🩹 [Имя] мотает бинт...", "end": "✨ Заживет!"},
+    "soap": {"name": "🧼 Мыло", "price": 40, "effect": "wash", "value": 1, "text": "🧼 [Имя] моется...", "end": "✨ Чистый!"},
+
+    # УЮТ
+    "pillow": {"name": "🛏 Подушка", "price": 100, "effect": "energy", "value": 30, "text": "🛏 [Имя] ложится на подушку...", "end": "✨ Мягко!"},
+    "blanket": {"name": "🛌 Одеяло", "price": 200, "effect": "energy", "value": 50, "text": "🛌 [Имя] укрывается одеялом...", "end": "✨ Тепло!"},
+    "bed": {"name": "🛏 Кровать", "price": 500, "effect": "energy", "value": 100, "text": "🛏 [Имя] прыгает на кровать...", "end": "✨ Сон!"},
+
+    # РАЗВЛЕЧЕНИЯ
+    "ball": {"name": "⚽ Мячик", "price": 70, "effect": "mood", "value": 25, "text": "⚽ [Имя] берет мячик...", "end": "✨ Играем!"},
+    "toy": {"name": "🧸 Игрушка", "price": 120, "effect": "mood", "value": 40, "text": "🧸 [Имя] обнимает игрушку...", "end": "✨ Мило!"},
+    "game": {"name": "🎮 Игра", "price": 300, "effect": "mood", "value": 70, "text": "🎮 [Имя] играет...", "end": "✨ Победа!"},
+    "vr": {"name": "🕶 VR-очки", "price": 800, "effect": "mood", "value": 100, "text": "🕶 [Имя] надевает VR...", "end": "✨ Другой мир!"},
+
+    # БАР
+    "beer": {"name": "🍺 Пиво", "price": 60, "effect": "mood", "value": 20, "text": "🍺 [Имя] пьет пиво...", "end": "✨ Опьянел!"},
+    "wine": {"name": "🍷 Вино", "price": 150, "effect": "mood", "value": 35, "text": "🍷 [Имя] пьет вино...", "end": "✨ Букет!"},
+    "vodka": {"name": "🥃 Водка", "price": 200, "effect": "mood", "value": 50, "text": "🥃 [Имя] пьет водку...", "end": "✨ Кружится голова!"},
+    "whiskey": {"name": "🥃 Виски", "price": 300, "effect": "mood", "value": 60, "text": "🥃 [Имя] пьет виски...", "end": "✨ Аристократ!"},
+    "champagne": {"name": "🍾 Шампанское", "price": 500, "effect": "mood", "value": 80, "text": "🍾 [Имя] открывает шампанское...", "end": "✨ Ура!"},
+    
+    # АКСЕССУАРЫ (КОЛЛЕКЦИЯ)
+    "hat": {"name": "🎩 Шляпа", "price": 150, "effect": "wear", "value": 1, "text": "🎩 [Имя] надевает шляпу...", "end": "✨ Стильно!"},
+    "glasses": {"name": "🕶 Очки", "price": 200, "effect": "wear", "value": 1, "text": "🕶 [Имя] надевает очки...", "end": "✨ Модно!"},
+    "bow": {"name": "🎀 Бантик", "price": 100, "effect": "wear", "value": 1, "text": "🎀 [Имя] завязывает бантик...", "end": "✨ Прелесть!"},
 }
 
 DREAMS = ["🐑 [Имя] видит сон, как он прыгает по облакам...", "🍖 [Имя] снится огромная гора сосисок...", "🚀 [Имя] летит в космос на ракете из носков..."]
@@ -253,15 +259,11 @@ async def process_char(call: CallbackQuery, state: FSMContext):
     await call.message.answer("🎉 Персонаж создан! Теперь твоя задача — заботиться о нем.", reply_markup=get_main_keyboard())
     await call.answer()
 
-# --- ДЕЙСТВИЯ ---
+# --- ДЕЙСТВИЯ (Отправка фото с текстом) ---
 async def send_card(message_or_call, user, action_text=""):
     stats = get_stats_text(user)
     caption = f"{action_text}\n\n{stats}"
-    img = await make_card(user['pet_photo'], stats, user['pet_name'])
-    if img:
-        await bot.send_photo(message_or_call.from_user.id, photo=img, caption=caption, parse_mode="HTML")
-    else:
-        await bot.send_message(message_or_call.from_user.id, text=f"⚠️ Не удалось создать карточку.\n{caption}")
+    await bot.send_photo(message_or_call.from_user.id, photo=user['pet_photo'], caption=caption, parse_mode="Markdown")
 
 async def sleep_timer(user_id, pet_name):
     await asyncio.sleep(60)
@@ -399,7 +401,8 @@ async def shop_menu(message: Message):
     if is_spam(message.from_user.id): return
     kb = InlineKeyboardMarkup(inline_keyboard=[
         [InlineKeyboardButton(text="🍔 Еда", callback_data="cat_hunger"), InlineKeyboardButton(text="💧 Вода", callback_data="cat_thirst")],
-        [InlineKeyboardButton(text="🎩 Аксессуары", callback_data="cat_wear"), InlineKeyboardButton(text="🍺 Бар", callback_data="cat_mood")]
+        [InlineKeyboardButton(text="🎩 Аксессуары", callback_data="cat_wear"), InlineKeyboardButton(text="🍺 Бар", callback_data="cat_mood")],
+        [InlineKeyboardButton(text="💊 Аптека", callback_data="cat_heal"), InlineKeyboardButton(text="🛏 Уют", callback_data="cat_energy")]
     ])
     await message.answer("🛒 **Магазин**\nВыбери категорию:", reply_markup=kb, parse_mode="Markdown")
 
@@ -413,6 +416,8 @@ async def shop_category(call: CallbackQuery):
         elif cat == "thirst" and item['effect'] == 'thirst': is_match = True
         elif cat == "wear" and item['effect'] == 'wear': is_match = True
         elif cat == "mood" and item['effect'] == 'mood': is_match = True
+        elif cat == "heal" and item['effect'] in ['heal', 'wash']: is_match = True
+        elif cat == "energy" and item['effect'] == 'energy': is_match = True
         
         if is_match:
             kb_buttons.append([InlineKeyboardButton(text=f"{item['name']} - {item['price']}🪙", callback_data=f"buy_{item_id}")])
@@ -423,7 +428,8 @@ async def shop_category(call: CallbackQuery):
 async def back_shop(call: CallbackQuery):
     kb = InlineKeyboardMarkup(inline_keyboard=[
         [InlineKeyboardButton(text="🍔 Еда", callback_data="cat_hunger"), InlineKeyboardButton(text="💧 Вода", callback_data="cat_thirst")],
-        [InlineKeyboardButton(text="🎩 Аксессуары", callback_data="cat_wear"), InlineKeyboardButton(text="🍺 Бар", callback_data="cat_mood")]
+        [InlineKeyboardButton(text="🎩 Аксессуары", callback_data="cat_wear"), InlineKeyboardButton(text="🍺 Бар", callback_data="cat_mood")],
+        [InlineKeyboardButton(text="💊 Аптека", callback_data="cat_heal"), InlineKeyboardButton(text="🛏 Уют", callback_data="cat_energy")]
     ])
     await call.message.edit_text("🛒 **Магазин**\nВыбери категорию:", reply_markup=kb, parse_mode="Markdown")
 
@@ -480,6 +486,10 @@ async def use_item(call: CallbackQuery):
     if effect == "hunger": users[uid]['hunger'] = min(100, users[uid]['hunger'] + val)
     elif effect == "thirst": users[uid]['thirst'] = min(100, users[uid]['thirst'] + val)
     elif effect == "mood": users[uid]['mood'] = min(100, users[uid]['mood'] + val)
+    elif effect == "energy": users[uid]['energy'] = min(100, users[uid]['energy'] + val)
+    elif effect == "heal": users[uid]['is_sick'] = False
+    elif effect == "wash": users[uid]['is_dirty'] = False
+
     users[uid]['last_update'] = int(time.time())
     add_xp(users[uid], 5)
     save_db(users)
