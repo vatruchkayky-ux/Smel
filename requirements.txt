@@ -1,3 +1,1 @@
 aiogram==3.13.1
-Pillow==10.3.0
-ttf-opensans==0.2.0
