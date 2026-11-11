@@ -4,6 +4,7 @@ import json
 import os
 import time
 import io
+import ttf_opensans
 from datetime import datetime
 from zoneinfo import ZoneInfo
 from PIL import Image, ImageDraw, ImageFont
@@ -62,22 +63,27 @@ async def make_card(photo_id, text, user_name):
         margin = 20
         box_height = int(h * 0.35)
         
-        draw.rectangle([(0, h - box_height), (w, h)], fill=(0, 0, 0, 180))
+        # Черная плашка снизу
+        draw.rectangle([(0, h - box_height), (w, h)], fill=(0, 0, 0, 200))
         
+        # Загружаем встроенный шрифт
         try:
-            font = ImageFont.truetype("/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf", 24)
+            font = ttf_opensans.OPENSANS_SEMIBOLD.imagefont(size=26)
         except:
             font = ImageFont.load_default()
             
         out = Image.alpha_composite(img, overlay)
         draw_out = ImageDraw.Draw(out)
-        draw_out.text((margin, h - box_height + 10), f"👤 {user_name}", font=font, fill="white")
         
+        # Имя белым
+        draw_out.text((margin, h - box_height + 15), user_name, font=font, fill="white")
+        
+        # Характеристики серым
         lines = text.split("\n")
-        y_offset = h - box_height + 50
+        y_offset = h - box_height + 55
         for line in lines:
-            draw_out.text((margin, y_offset), line, font=font, fill=(200, 200, 200))
-            y_offset += 30
+            draw_out.text((margin, y_offset), line, font=font, fill=(230, 230, 230))
+            y_offset += 32
             
         bio = io.BytesIO()
         out.convert("RGB").save(bio, format="JPEG", quality=90)
@@ -94,10 +100,10 @@ def get_stats_text(user):
     xp_needed = lvl * 100
     
     text = (
-        f"Возраст: {age} лет  |  Ур. {lvl}  |  🪙 {user['coins']}\n"
-        f"📈 Опыт: {xp}/{xp_needed}\n"
-        f"🍔 {user['hunger']}%  💧 {user['thirst']}%\n"
-        f"⚡ {user['energy']}%  🎾 {user['mood']}%"
+        f"Возраст: {age} лет  |  Ур. {lvl}  |  Монеты: {user['coins']}\n"
+        f"Опыт: {xp}/{xp_needed}\n"
+        f"Сытость: {user['hunger']}%  |  Жажда: {user['thirst']}%\n"
+        f"Энергия: {user['energy']}%  |  Настроение: {user['mood']}%"
     )
     return text
 
@@ -180,18 +186,15 @@ async def background_worker():
         except Exception as e: print(f"Ошибка фона: {e}")
         await asyncio.sleep(900)
 
-# --- СТАРТ (С ИНСТРУКЦИЕЙ) ---
+# --- СТАРТ ---
 @dp.message(CommandStart())
 async def cmd_start(message: Message, state: FSMContext):
     users = load_db(); uid = str(message.from_user.id)
-    
-    # Если персонаж уже создан
     if uid in users:
         if users[uid].get('is_dead'): 
             return await message.answer(f"💀 {users[uid]['pet_name']} покинул этот мир. Напиши /start, чтобы начать заново.", reply_markup=get_main_keyboard())
         return await message.answer(f"С возвращением! {users[uid]['pet_name']} скучал.", reply_markup=get_main_keyboard())
     
-    # Если зашел впервые - показываем инструкцию и кнопку "Погнали"
     text = (
         "👋 **Добро пожаловать в игру!**\n\n"
         "Здесь ты сможешь завести своего собственного персонажа, заботиться о нем и прокачивать его.\n\n"
@@ -206,10 +209,9 @@ async def cmd_start(message: Message, state: FSMContext):
     kb = InlineKeyboardMarkup(inline_keyboard=[[InlineKeyboardButton(text="Погнали! 🚀", callback_data="start_create")]])
     await message.answer(text, reply_markup=kb, parse_mode="Markdown")
 
-# --- ОБРАБОТКА КНОПКИ "ПОГНАЛИ" ---
 @dp.callback_query(F.data == "start_create")
 async def start_create(call: CallbackQuery, state: FSMContext):
-    await call.message.edit_reply_markup(reply_markup=None) # Убираем кнопку
+    await call.message.edit_reply_markup(reply_markup=None)
     await call.message.answer("Отлично! Начнем с выбора имени.")
     await call.message.answer("Шаг 1. Введи имя для своего персонажа (максимум 15 символов):")
     await state.set_state(CreatePet.name)
@@ -251,7 +253,7 @@ async def process_char(call: CallbackQuery, state: FSMContext):
     await call.message.answer("🎉 Персонаж создан! Теперь твоя задача — заботиться о нем.", reply_markup=get_main_keyboard())
     await call.answer()
 
-# --- ДЕЙСТВИЯ (С наложением текста) ---
+# --- ДЕЙСТВИЯ ---
 async def send_card(message_or_call, user, action_text=""):
     stats = get_stats_text(user)
     caption = f"{action_text}\n\n{stats}"
