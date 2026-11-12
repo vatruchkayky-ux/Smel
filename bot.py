@@ -46,7 +46,6 @@ def save_db(data):
     except Exception as e:
         print(f"ОШИБКА СОХРАНЕНИЯ: {e}")
 
-# --- ПРОСТЫЕ ПРОЦЕНТЫ (БЕЗ КВАДРАТИКОВ) ---
 def draw_text_bar(value):
     return f"{value}%"
 
@@ -89,70 +88,36 @@ class AdminState(StatesGroup):
     waiting_for_amount = State()
     target_id = State()
 
+class ChallengeState(StatesGroup):
+    waiting_for_answer = State()
+
 def get_main_keyboard():
     kb = [
-        [KeyboardButton(text="🍔 Покормить"), KeyboardButton(text="💧 Попить")],
+        [KeyboardButton(text="🛒 Магазин"), KeyboardButton(text="🎒 Инвентарь")],
         [KeyboardButton(text="🛌 Поспать"), KeyboardButton(text="🎾 Поиграть")],
         [KeyboardButton(text="📊 Профиль"), KeyboardButton(text="💬 Поговорить")],
-        [KeyboardButton(text="🛒 Магазин"), KeyboardButton(text="🎒 Инвентарь")],
         [KeyboardButton(text="🎁 Бонус"), KeyboardButton(text="🎮 Мини-игра")],
         [KeyboardButton(text="🎯 Испытание")]
     ]
     return ReplyKeyboardMarkup(keyboard=kb, resize_keyboard=True)
 
-# --- ОГРОМНЫЙ АССОРТИМЕНТ (ВОЗВРАЩЕН) ---
+# --- ТОВАРЫ (ЕДА, ВОДА, БРЕНДОВАЯ ОДЕЖДА) ---
 SHOP_ITEMS = {
-    # ЕДА
+    # Еда и вода
     "apple": {"name": "🍎 Яблоко", "price": 15, "effect": "hunger", "value": 10, "text": "🍎 [Имя] берет яблоко...", "end": "✨ Сочное!"},
     "burger": {"name": "🍔 Бургер", "price": 40, "effect": "hunger", "value": 30, "text": "🍔 [Имя] ест бургер...", "end": "✨ Обожаю фастфуд!"},
-    "pizza": {"name": "🍕 Пицца", "price": 80, "effect": "hunger", "value": 50, "text": "🍕 [Имя] ест пиццу...", "end": "✨ Сыр тянется!"},
-    "sushi": {"name": "🍣 Суши", "price": 100, "effect": "hunger", "value": 60, "text": "🍣 [Имя] ест суши...", "end": "✨ Васаби!"},
-    "taco": {"name": "🌮 Тако", "price": 50, "effect": "hunger", "value": 35, "text": "🌮 [Имя] ест тако...", "end": "✨ Остро!"},
-    "donut": {"name": "🍩 Пончик", "price": 25, "effect": "hunger", "value": 15, "text": "🍩 [Имя] ест пончик...", "end": "✨ Сладко!"},
-    "steak": {"name": "🥩 Стейк", "price": 150, "effect": "hunger", "value": 80, "text": "🥩 [Имя] ест стейк...", "end": "✨ Мясо!"},
-    "salad": {"name": "🥗 Салат", "price": 30, "effect": "hunger", "value": 20, "text": "🥗 [Имя] ест салат...", "end": "✨ Полезно!"},
-    "cake": {"name": "🍰 Тортик", "price": 60, "effect": "hunger", "value": 40, "text": "🍰 [Имя] ест тортик...", "end": "✨ Сладко!"},
-    "chocolate": {"name": "🍫 Шоколад", "price": 20, "effect": "hunger", "value": 10, "text": "🍫 [Имя] ест шоколад...", "end": "✨ Вкусно!"},
-    
-    # ВОДА
     "water": {"name": "🥛 Вода", "price": 10, "effect": "thirst", "value": 15, "text": "🥛 [Имя] пьет воду...", "end": "✨ Освежает!"},
     "cola": {"name": "🥤 Кола", "price": 25, "effect": "thirst", "value": 25, "text": "🥤 [Имя] пьет колу...", "end": "✨ Пузырьки!"},
-    "pepsi": {"name": "🥤 Пепси", "price": 25, "effect": "thirst", "value": 25, "text": "🥤 [Имя] пьет пепси...", "end": "✨ Классика!"},
-    "juice": {"name": "🧃 Сок", "price": 30, "effect": "thirst", "value": 30, "text": "🧃 [Имя] пьет сок...", "end": "✨ Витамины!"},
-    "coffee": {"name": "☕ Кофе", "price": 40, "effect": "thirst", "value": 20, "text": "☕ [Имя] пьет кофе...", "end": "✨ Проснулся!"},
-    "tea": {"name": "🍵 Чай", "price": 20, "effect": "thirst", "value": 15, "text": "🍵 [Имя] пьет чай...", "end": "✨ Уютно!"},
-    "energy": {"name": "⚡ Энергетик", "price": 50, "effect": "thirst", "value": 50, "text": "⚡ [Имя] пьет энергетик...", "end": "✨ Горы сверну!"},
-    "milkshake": {"name": "🥤 Милкшейк", "price": 60, "effect": "thirst", "value": 40, "text": "🥤 [Имя] пьет милкшейк...", "end": "✨ Ням!"},
-    "lemonade": {"name": "🍋 Лимонад", "price": 35, "effect": "thirst", "value": 30, "text": "🍋 [Имя] пьет лимонад...", "end": "✨ Кисло-сладко!"},
-    "smoothie": {"name": "🍹 Смузи", "price": 70, "effect": "thirst", "value": 45, "text": "🍹 [Имя] пьет смузи...", "end": "✨ Полезно!"},
-
-    # МЕДИЦИНА
-    "pill": {"name": "💊 Таблетка", "price": 100, "effect": "heal", "value": 1, "text": "💊 [Имя] пьет таблетку...", "end": "✨ Здоров!"},
-    "bandage": {"name": "🩹 Бинт", "price": 50, "effect": "heal", "value": 1, "text": "🩹 [Имя] мотает бинт...", "end": "✨ Заживет!"},
-    "soap": {"name": "🧼 Мыло", "price": 40, "effect": "wash", "value": 1, "text": "🧼 [Имя] моется...", "end": "✨ Чистый!"},
-
-    # УЮТ
-    "pillow": {"name": "🛏 Подушка", "price": 100, "effect": "energy", "value": 30, "text": "🛏 [Имя] ложится на подушку...", "end": "✨ Мягко!"},
-    "blanket": {"name": "🛌 Одеяло", "price": 200, "effect": "energy", "value": 50, "text": "🛌 [Имя] укрывается одеялом...", "end": "✨ Тепло!"},
-    "bed": {"name": "🛏 Кровать", "price": 500, "effect": "energy", "value": 100, "text": "🛏 [Имя] прыгает на кровать...", "end": "✨ Сон!"},
-
-    # РАЗВЛЕЧЕНИЯ
-    "ball": {"name": "⚽ Мячик", "price": 70, "effect": "mood", "value": 25, "text": "⚽ [Имя] берет мячик...", "end": "✨ Играем!"},
-    "toy": {"name": "🧸 Игрушка", "price": 120, "effect": "mood", "value": 40, "text": "🧸 [Имя] обнимает игрушку...", "end": "✨ Мило!"},
-    "game": {"name": "🎮 Игра", "price": 300, "effect": "mood", "value": 70, "text": "🎮 [Имя] играет...", "end": "✨ Победа!"},
-    "vr": {"name": "🕶 VR-очки", "price": 800, "effect": "mood", "value": 100, "text": "🕶 [Имя] надевает VR...", "end": "✨ Другой мир!"},
-
-    # БАР
     "beer": {"name": "🍺 Пиво", "price": 60, "effect": "mood", "value": 20, "text": "🍺 [Имя] пьет пиво...", "end": "✨ Опьянел!"},
-    "wine": {"name": "🍷 Вино", "price": 150, "effect": "mood", "value": 35, "text": "🍷 [Имя] пьет вино...", "end": "✨ Букет!"},
-    "vodka": {"name": "🥃 Водка", "price": 200, "effect": "mood", "value": 50, "text": "🥃 [Имя] пьет водку...", "end": "✨ Кружится голова!"},
-    "whiskey": {"name": "🥃 Виски", "price": 300, "effect": "mood", "value": 60, "text": "🥃 [Имя] пьет виски...", "end": "✨ Аристократ!"},
-    "champagne": {"name": "🍾 Шампанское", "price": 500, "effect": "mood", "value": 80, "text": "🍾 [Имя] открывает шампанское...", "end": "✨ Ура!"},
     
-    # АКСЕССУАРЫ (КОЛЛЕКЦИЯ)
-    "hat": {"name": "🎩 Шляпа", "price": 150, "effect": "wear", "value": 1, "text": "🎩 [Имя] надевает шляпу...", "end": "✨ Стильно!"},
-    "glasses": {"name": "🕶 Очки", "price": 200, "effect": "wear", "value": 1, "text": "🕶 [Имя] надевает очки...", "end": "✨ Модно!"},
-    "bow": {"name": "🎀 Бантик", "price": 100, "effect": "wear", "value": 1, "text": "🎀 [Имя] завязывает бантик...", "end": "✨ Прелесть!"},
+    # Брендовая одежда (Аксессуары)
+    "nike": {"name": "👟 Кроссовки Nike", "price": 500, "effect": "wear", "value": 1, "text": "👟 [Имя] надевает кроссовки Nike...", "end": "✨ Just Do It!"},
+    "adidas": {"name": "🧥 Худи Adidas", "price": 400, "effect": "wear", "value": 1, "text": "🧥 [Имя] надевает худи Adidas...", "end": "✨ Немецкое качество!"},
+    "gucci": {"name": "🕶 Очки Gucci", "price": 800, "effect": "wear", "value": 1, "text": "🕶 [Имя] надевает очки Gucci...", "end": "✨ Люксовый стиль!"},
+    "rolex": {"name": "⌚ Часы Rolex", "price": 1500, "effect": "wear", "value": 1, "text": "⌚ [Имя] надевает Rolex...", "end": "✨ Время — деньги!"},
+    "supreme": {"name": "🧢 Кепка Supreme", "price": 300, "effect": "wear", "value": 1, "text": "🧢 [Имя] надевает кепку Supreme...", "end": "✨ Уличный стиль!"},
+    "louis": {"name": "👜 Сумка Louis Vuitton", "price": 2000, "effect": "wear", "value": 1, "text": "👜 [Имя] берет сумку LV...", "end": "✨ Дорого-богато!"},
+    "prada": {"name": "👗 Платье Prada", "price": 2500, "effect": "wear", "value": 1, "text": "👗 [Имя] надевает платье Prada...", "end": "✨ Высокая мода!"},
 }
 
 DREAMS = ["🐑 [Имя] видит сон, как он прыгает по облакам...", "🍖 [Имя] снится огромная гора сосисок...", "🚀 [Имя] летит в космос на ракете из носков..."]
@@ -172,8 +137,9 @@ async def background_worker():
                 if user.get('is_dead'): continue
                 last_upd = user.get('last_update', current_time)
                 elapsed_mins = (current_time - last_upd) / 60
-                drop = int(elapsed_mins / 5)
+                drop = int(elapsed_mins / 30)
                 if drop > 0:
+                    old_hunger = user['hunger']
                     user['hunger'] = max(0, user['hunger'] - drop)
                     user['thirst'] = max(0, user['thirst'] - drop)
                     user['energy'] = max(0, user['energy'] - drop)
@@ -185,8 +151,8 @@ async def background_worker():
                         try: await bot.send_message(int(uid_str), f"💀 {user['pet_name']} не выдержал...")
                         except: pass
                         continue
-                    if user['hunger'] < 30 or user['thirst'] < 30:
-                        try: await bot.send_message(int(uid_str), f"⚠️ {user['pet_name']} голоден!")
+                    if user['hunger'] <= 20 and old_hunger > 20:
+                        try: await bot.send_message(int(uid_str), f"⚠️ {user['pet_name']} голоден! Купи еду.")
                         except: pass
             if changed: save_db(users)
         except Exception as e: print(f"Ошибка фона: {e}")
@@ -198,28 +164,53 @@ async def cmd_start(message: Message, state: FSMContext):
     users = load_db(); uid = str(message.from_user.id)
     if uid in users:
         if users[uid].get('is_dead'): 
-            return await message.answer(f"💀 {users[uid]['pet_name']} покинул этот мир. Напиши /start, чтобы начать заново.", reply_markup=get_main_keyboard())
+            kb = InlineKeyboardMarkup(inline_keyboard=[[InlineKeyboardButton(text="🕯 Воскресить (5000 🪙)", callback_data="revive_pet")]])
+            return await message.answer_photo(
+                photo=users[uid]['pet_photo'], 
+                caption=f"💀 **{users[uid]['pet_name']} покинул этот мир...**\n\nВоскрешение стоит 5000 монет.\nТвой баланс: {users[uid]['coins']} 🪙", 
+                reply_markup=kb, parse_mode="Markdown"
+            )
         return await message.answer(f"С возвращением! {users[uid]['pet_name']} скучал.", reply_markup=get_main_keyboard())
     
     text = (
         "👋 **Добро пожаловать в игру!**\n\n"
         "Здесь ты сможешь завести своего собственного персонажа, заботиться о нем и прокачивать его.\n\n"
         "📜 **Что можно делать:**\n"
-        "🍔 Кормить и поить, чтобы он не умер.\n"
-        "🎾 Играть и спать, чтобы поднять настроение и энергию.\n"
-        "🛒 Покупать еду и аксессуары в магазине за монеты.\n"
-        "🎮 Играть в мини-игры и проходить испытания, чтобы заработать монеты и опыт (XP).\n"
-        "⭐ Повышать уровень и открывать новые возможности.\n\n"
-        "⚠️ **Важно:** Каким ты создашь персонажа (имя, фото, характер) — таким он останется навсегда!"
+        "🛒 Покупать еду и воду в магазине.\n"
+        "🎒 Использовать предметы и надевать брендовые вещи.\n"
+        "🎾 Играть и спать.\n"
+        "🎮 Играть в мини-игры.\n"
+        "🎯 Проходить испытания.\n"
+        "⭐ Повышать уровень.\n\n"
+        "⚠️ **Важно:** Персонаж создается навсегда!"
     )
     kb = InlineKeyboardMarkup(inline_keyboard=[[InlineKeyboardButton(text="Погнали! 🚀", callback_data="start_create")]])
     await message.answer(text, reply_markup=kb, parse_mode="Markdown")
 
+@dp.callback_query(F.data == "revive_pet")
+async def revive_pet(call: CallbackQuery):
+    users = load_db(); uid = str(call.from_user.id)
+    if uid not in users: return
+    user = users[uid]
+    
+    if not user.get('is_dead'): return await call.answer("Твой персонаж жив!", show_alert=True)
+    price = 5000
+    if user['coins'] < price:
+        return await call.answer(f"Не хватает монет! Нужно {price} 🪙, а у тебя {user['coins']} 🪙.", show_alert=True)
+        
+    user['coins'] -= price
+    user['is_dead'] = False
+    user['hunger'] = 100; user['thirst'] = 100; user['energy'] = 100; user['mood'] = 100
+    save_db(users)
+    
+    await call.message.edit_reply_markup(reply_markup=None)
+    await call.message.answer_photo(photo=user['pet_photo'], caption="🕯 **Успешное воскрешение!**\nТвой персонаж снова с тобой и полон сил!", parse_mode="Markdown")
+    await call.answer("Успешно воскрешён!")
+
 @dp.callback_query(F.data == "start_create")
 async def start_create(call: CallbackQuery, state: FSMContext):
     await call.message.edit_reply_markup(reply_markup=None)
-    await call.message.answer("Отлично! Начнем с выбора имени.")
-    await call.message.answer("Шаг 1. Введи имя для своего персонажа (максимум 15 символов):")
+    await call.message.answer("Шаг 1. Введи имя для своего персонажа:")
     await state.set_state(CreatePet.name)
     await call.answer()
 
@@ -227,19 +218,17 @@ async def start_create(call: CallbackQuery, state: FSMContext):
 async def process_name(message: Message, state: FSMContext):
     if len(message.text) > 15: return await message.answer("Максимум 15 символов.")
     await state.update_data(name=message.text)
-    await message.answer("Шаг 2. Отправь фото, как должен выглядеть твой персонаж:")
+    await message.answer("Шаг 2. Отправь фото:")
     await state.set_state(CreatePet.photo)
 
 @dp.message(CreatePet.photo, F.photo)
 async def process_photo(message: Message, state: FSMContext):
     await state.update_data(photo=message.photo[-1].file_id)
     kb = InlineKeyboardMarkup(inline_keyboard=[
-        [InlineKeyboardButton(text="🥰 Милый", callback_data="char_cute")], 
-        [InlineKeyboardButton(text="😈 Вредный", callback_data="char_rude")],
-        [InlineKeyboardButton(text="🧠 Умный", callback_data="char_smart")], 
-        [InlineKeyboardButton(text="🤪 Безумный", callback_data="char_crazy")]
+        [InlineKeyboardButton(text="🥰 Милый", callback_data="char_cute")], [InlineKeyboardButton(text="😈 Вредный", callback_data="char_rude")],
+        [InlineKeyboardButton(text="🧠 Умный", callback_data="char_smart")], [InlineKeyboardButton(text="🤪 Безумный", callback_data="char_crazy")]
     ])
-    await message.answer("Шаг 3. Выбери характер (навсегда):", reply_markup=kb)
+    await message.answer("Шаг 3. Выбери характер:", reply_markup=kb)
     await state.set_state(CreatePet.char)
 
 @dp.callback_query(CreatePet.char, F.data.startswith("char_"))
@@ -256,10 +245,10 @@ async def process_char(call: CallbackQuery, state: FSMContext):
     }
     save_db(users)
     await state.clear()
-    await call.message.answer("🎉 Персонаж создан! Теперь твоя задача — заботиться о нем.", reply_markup=get_main_keyboard())
+    await call.message.answer("🎉 Персонаж создан!", reply_markup=get_main_keyboard())
     await call.answer()
 
-# --- ДЕЙСТВИЯ (Отправка фото с текстом) ---
+# --- ДЕЙСТВИЯ ---
 async def send_card(message_or_call, user, action_text=""):
     stats = get_stats_text(user)
     caption = f"{action_text}\n\n{stats}"
@@ -276,30 +265,6 @@ async def sleep_timer(user_id, pet_name):
         class FakeMsg: pass
         fake = FakeMsg(); fake.from_user = type('obj', (object,), {'id': int(user_id)})
         await send_card(fake, users[uid], f"☀️ {pet_name} проснулся!\nСон: {dream}")
-
-@dp.message(F.text == "🍔 Покормить")
-async def feed_pet(message: Message):
-    if is_spam(message.from_user.id): return
-    users = load_db(); uid = str(message.from_user.id)
-    if uid not in users or users[uid].get('is_dead'): return
-    if users[uid]['hunger'] >= 100: return await message.answer(f"🍔 {users[uid]['pet_name']} сыт!")
-    users[uid]['hunger'] = min(100, users[uid]['hunger'] + 20)
-    users[uid]['last_update'] = int(time.time())
-    add_xp(users[uid], 5)
-    save_db(users)
-    await send_card(message, users[uid], f"🍔 *Ты покормил {users[uid]['pet_name']}!*")
-
-@dp.message(F.text == "💧 Попить")
-async def water_pet(message: Message):
-    if is_spam(message.from_user.id): return
-    users = load_db(); uid = str(message.from_user.id)
-    if uid not in users or users[uid].get('is_dead'): return
-    if users[uid]['thirst'] >= 100: return await message.answer(f"💧 {users[uid]['pet_name']} не хочет пить!")
-    users[uid]['thirst'] = min(100, users[uid]['thirst'] + 20)
-    users[uid]['last_update'] = int(time.time())
-    add_xp(users[uid], 5)
-    save_db(users)
-    await send_card(message, users[uid], f"💧 *Ты напоил {users[uid]['pet_name']}!*")
 
 @dp.message(F.text == "🎾 Поиграть")
 async def play_pet(message: Message):
@@ -328,60 +293,173 @@ async def show_profile(message: Message):
     if uid not in users: return
     await send_card(message, users[uid], "📊 *Паспорт персонажа*")
 
-# --- МИНИ-ИГРА И ИСПЫТАНИЯ ---
+# --- МИНИ-ИГРЫ ---
 @dp.message(F.text == "🎮 Мини-игра")
 async def mini_game(message: Message):
     users = load_db(); uid = str(message.from_user.id)
     if uid not in users or users[uid].get('is_dead'): return
-    secret = random.randint(1, 5)
-    users[uid]['game_secret'] = secret
+    
+    game = random.choice(["guess", "coin", "rps"])
+    users[uid]['current_game'] = game
     save_db(users)
-    kb = InlineKeyboardMarkup(inline_keyboard=[
-        [InlineKeyboardButton(text="1", callback_data="guess_1"), InlineKeyboardButton(text="2", callback_data="guess_2")],
-        [InlineKeyboardButton(text="3", callback_data="guess_3"), InlineKeyboardButton(text="4", callback_data="guess_4")],
-        [InlineKeyboardButton(text="5", callback_data="guess_5")]
-    ])
-    await message.answer(f"🎮 **Мини-игра**\n{users[uid]['pet_name']} загадал число от 1 до 5.\nПриз: 50 монет и 20 XP", reply_markup=kb)
+    
+    if game == "guess":
+        users[uid]['game_secret'] = random.randint(1, 5)
+        save_db(users)
+        kb = InlineKeyboardMarkup(inline_keyboard=[
+            [InlineKeyboardButton(text="1", callback_data="guess_1"), InlineKeyboardButton(text="2", callback_data="guess_2")],
+            [InlineKeyboardButton(text="3", callback_data="guess_3"), InlineKeyboardButton(text="4", callback_data="guess_4")],
+            [InlineKeyboardButton(text="5", callback_data="guess_5")]
+        ])
+        await message.answer(f"🎮 **Мини-игра: Угадай число!**\n{users[uid]['pet_name']} загадал число от 1 до 5.\nПриз: 50 монет и 20 XP", reply_markup=kb)
+    elif game == "coin":
+        kb = InlineKeyboardMarkup(inline_keyboard=[
+            [InlineKeyboardButton(text="Орёл 🦅", callback_data="coin_eagle"), InlineKeyboardButton(text="Решка 🪙", callback_data="coin_tails")]
+        ])
+        await message.answer(f"🎮 **Мини-игра: Орёл или Решка!**\nЧто выпадет?\nПриз: 50 монет и 20 XP", reply_markup=kb)
+    elif game == "rps":
+        kb = InlineKeyboardMarkup(inline_keyboard=[
+            [InlineKeyboardButton(text="Камень 🪨", callback_data="rps_rock"), InlineKeyboardButton(text="Ножницы ✂️", callback_data="rps_scissors")],
+            [InlineKeyboardButton(text="Бумага 📄", callback_data="rps_paper")]
+        ])
+        await message.answer(f"🎮 **Мини-игра: Камень, Ножницы, Бумага!**\nТвой ход:\nПриз: 50 монет и 20 XP", reply_markup=kb)
 
 @dp.callback_query(F.data.startswith("guess_"))
 async def guess_number(call: CallbackQuery):
     users = load_db(); uid = str(call.from_user.id)
-    if uid not in users or 'game_secret' not in users[uid]: return
+    if uid not in users or users[uid].get('current_game') != "guess": return
     guess = int(call.data.replace("guess_", ""))
-    secret = users[uid]['game_secret']
+    secret = users[uid].get('game_secret', 0)
     if guess == secret:
         users[uid]['coins'] += 50
         add_xp(users[uid], 20)
-        del users[uid]['game_secret']
+        del users[uid]['current_game']
         save_db(users)
         await call.message.edit_text(f"🎉 **Угадал!**\n🪙 +50 монет\n📈 +20 XP")
     else:
         await call.answer(f"Мимо! Было {secret}", show_alert=True)
-        del users[uid]['game_secret']
+        del users[uid]['current_game']
         save_db(users)
         await call.message.edit_text(f"❌ **Не угадал.** Было {secret}.")
 
+@dp.callback_query(F.data.startswith("coin_"))
+async def coin_game(call: CallbackQuery):
+    users = load_db(); uid = str(call.from_user.id)
+    if uid not in users or users[uid].get('current_game') != "coin": return
+    choice = call.data.replace("coin_", "")
+    result = random.choice(["eagle", "tails"])
+    if choice == result:
+        users[uid]['coins'] += 50
+        add_xp(users[uid], 20)
+        save_db(users)
+        await call.message.edit_text(f"🦅 Выпал **{ 'Орёл' if result == 'eagle' else 'Решка' }**!\n🎉 Ты угадал!\n🪙 +50 монет\n📈 +20 XP")
+    else:
+        await call.answer(f"Выпал {'Орёл' if result == 'eagle' else 'Решка'}! Не угадал.", show_alert=True)
+        await call.message.edit_text(f"🪙 Выпал **{ 'Орёл' if result == 'eagle' else 'Решка' }**.\n❌ Ты не угадал.")
+    del users[uid]['current_game']
+    save_db(users)
+
+@dp.callback_query(F.data.startswith("rps_"))
+async def rps_game(call: CallbackQuery):
+    users = load_db(); uid = str(call.from_user.id)
+    if uid not in users or users[uid].get('current_game') != "rps": return
+    choice = call.data.replace("rps_", "")
+    bot_choice = random.choice(["rock", "scissors", "paper"])
+    names = {"rock": "🪨 Камень", "scissors": "✂️ Ножницы", "paper": "📄 Бумага"}
+    win = (choice == "rock" and bot_choice == "scissors") or (choice == "scissors" and bot_choice == "paper") or (choice == "paper" and bot_choice == "rock")
+    draw = (choice == bot_choice)
+    res_text = f"Ты: {names[choice]}\nБот: {names[bot_choice]}\n\n"
+    if win:
+        users[uid]['coins'] += 50
+        add_xp(users[uid], 20)
+        res_text += "🎉 **Ты победил!**\n🪙 +50 монет\n📈 +20 XP"
+    elif draw:
+        res_text += "🤝 **Ничья!**\nПопробуй еще раз."
+    else:
+        res_text += "❌ **Ты проиграл.**"
+    del users[uid]['current_game']
+    save_db(users)
+    await call.message.edit_text(res_text)
+
+# --- ИСПЫТАНИЯ (НОВЫЕ) ---
 @dp.message(F.text == "🎯 Испытание")
-async def challenge_menu(message: Message):
+async def challenge_menu(message: Message, state: FSMContext):
     users = load_db(); uid = str(message.from_user.id)
     if uid not in users: return
     now = int(time.time())
     if now - users[uid].get('last_challenge', 0) < 86400:
         return await message.answer("⏳ Ты уже выполнял испытание сегодня. Возвращайся завтра!")
-    tasks = ["пощекотать", "спеть песенку", "станцевать", "рассказать анекдот"]
-    task = random.choice(tasks)
-    kb = InlineKeyboardMarkup(inline_keyboard=[[InlineKeyboardButton(text="Выполнить", callback_data="do_challenge")]])
-    await message.answer(f"🎯 **Испытание!**\n{users[uid]['pet_name']} просит тебя: *{task}*\n\nНаграда: 100 монет и 50 XP!", reply_markup=kb, parse_mode="Markdown")
+    
+    # Выбираем тип испытания
+    ctype = random.choice(["word", "math"])
+    
+    if ctype == "word":
+        tasks = [
+            ("Напиши слово 'пожалуйста'", "пожалуйста"),
+            ("Напиши 'я молодец'", "я молодец"),
+            ("Скажи 'люблю'", "люблю")
+        ]
+        task_text, answer = random.choice(tasks)
+        await state.update_data(answer=answer)
+        await message.answer(f"🎯 **Испытание!**\n{users[uid]['pet_name']} просит тебя: *{task_text}*\n\nНапиши это сообщением в чат. Награда: 100 монет и 50 XP!", parse_mode="Markdown")
+        await state.set_state(ChallengeState.waiting_for_answer)
+    else:
+        a, b = random.randint(1, 10), random.randint(1, 10)
+        ans = str(a + b)
+        await state.update_data(answer=ans)
+        await message.answer(f"🎯 **Испытание!**\nРеши пример: *{a} + {b} = ?*\n\nНапиши ответ в чат. Награда: 100 монет и 50 XP!", parse_mode="Markdown")
+        await state.set_state(ChallengeState.waiting_for_answer)
 
-@dp.callback_query(F.data == "do_challenge")
-async def do_challenge(call: CallbackQuery):
-    users = load_db(); uid = str(call.from_user.id)
-    if uid not in users: return
-    users[uid]['coins'] += 100
-    add_xp(users[uid], 50)
-    users[uid]['last_challenge'] = int(time.time())
-    save_db(users)
-    await call.message.edit_text(f"✅ **Испытание пройдено!**\n🪙 +100 монет\n📈 +50 XP")
+@dp.message(ChallengeState.waiting_for_answer)
+async def check_challenge(message: Message, state: FSMContext):
+    data = await state.get_data()
+    correct = data.get('answer', '').lower()
+    user_ans = message.text.lower().strip()
+    
+    users = load_db(); uid = str(message.from_user.id)
+    if not users or uid not in users: return
+    
+    if user_ans == correct:
+        users[uid]['coins'] += 100
+        add_xp(users[uid], 50)
+        users[uid]['last_challenge'] = int(time.time())
+        save_db(users)
+        await message.answer("✅ **Верно! Испытание пройдено.**\n🪙 +100 монет\n📈 +50 XP", reply_markup=get_main_keyboard())
+    else:
+        await message.answer(f"❌ **Неверно.** Попробуй завтра!", reply_markup=get_main_keyboard())
+        users[uid]['last_challenge'] = int(time.time())
+        save_db(users)
+        
+    await state.clear()
+
+# --- ОБЩЕНИЕ ---
+@dp.message(F.text == "💬 Поговорить")
+async def talk_to_pet(message: Message):
+    if is_spam(message.from_user.id): return
+    users = load_db(); uid = str(message.from_user.id)
+    if uid not in users or users[uid].get('is_dead'): return
+    if users[uid]['hunger'] < 30: return await message.answer(f"🍔 {users[uid]['pet_name']}: «Я очень голоден... Покорми меня».")
+    
+    char = users[uid]['pet_char']
+    if char == "cute":
+        s = ["Знаешь, ", "Я тут подумал, ", "Хочу тебе сказать, ", "Мне кажется, ", "Ты в курсе, что "]
+        m = ["ты самый лучший человек на свете, ", "твоя улыбка согревает меня, ", "с тобой так тепло и уютно, ", "я так рад, что ты у меня есть, "]
+        e = ["и я тебя очень люблю! 🤍", "и это делает меня счастливым! 🥰", "спасибо, что ты рядом! ✨", "давай обниматься! 🤗"]
+    elif char == "rude":
+        s = ["Слушай, ", "Ну чего тебе, ", "Опять ты, ", "Может хватит уже, "]
+        m = ["пристаешь ко мне со своими вопросами, ", "не даешь мне спокойно полежать, ", "мешаешь мне спать, "]
+        e = ["дай мне поспать! 😒", "иди лучше поиграй! 😤", "я вообще-то занят! 🙄"]
+    elif char == "smart":
+        s = ["Знаешь ли ты, что ", "Интересный факт: ", "С точки зрения науки, "]
+        m = ["осьминоги имеют три сердца, ", "медведи бегают 50 км/ч, ", "вода закипает при 100 градусах, "]
+        e = ["а ты знал об этом? 🧠", "и это невероятно! 🤓", "познавательно, не так ли? 🧐"]
+    else:
+        s = ["ААА! ", "Слушай, слушай! ", "Внезапно, ", "БУ! "]
+        m = ["а что если облака из ваты, ", "я нашел вчера банан, ", "мне кажется, я умею летать, "]
+        e = ["ДАВАЙ ВЫПЬЕМ ЧАЮ! 🤪", "ЭТО ЖЕ КРУТО! 😳", "АААА! 🚀"]
+
+    phrase = random.choice(s) + random.choice(m) + random.choice(e)
+    await message.answer(f"💬 {users[uid]['pet_name']}: «{phrase}»")
 
 @dp.message(F.text == "🎁 Бонус")
 async def daily_bonus(message: Message):
@@ -401,8 +479,7 @@ async def shop_menu(message: Message):
     if is_spam(message.from_user.id): return
     kb = InlineKeyboardMarkup(inline_keyboard=[
         [InlineKeyboardButton(text="🍔 Еда", callback_data="cat_hunger"), InlineKeyboardButton(text="💧 Вода", callback_data="cat_thirst")],
-        [InlineKeyboardButton(text="🎩 Аксессуары", callback_data="cat_wear"), InlineKeyboardButton(text="🍺 Бар", callback_data="cat_mood")],
-        [InlineKeyboardButton(text="💊 Аптека", callback_data="cat_heal"), InlineKeyboardButton(text="🛏 Уют", callback_data="cat_energy")]
+        [InlineKeyboardButton(text="👟 Брендовая одежда", callback_data="cat_wear")]
     ])
     await message.answer("🛒 **Магазин**\nВыбери категорию:", reply_markup=kb, parse_mode="Markdown")
 
@@ -416,9 +493,6 @@ async def shop_category(call: CallbackQuery):
         elif cat == "thirst" and item['effect'] == 'thirst': is_match = True
         elif cat == "wear" and item['effect'] == 'wear': is_match = True
         elif cat == "mood" and item['effect'] == 'mood': is_match = True
-        elif cat == "heal" and item['effect'] in ['heal', 'wash']: is_match = True
-        elif cat == "energy" and item['effect'] == 'energy': is_match = True
-        
         if is_match:
             kb_buttons.append([InlineKeyboardButton(text=f"{item['name']} - {item['price']}🪙", callback_data=f"buy_{item_id}")])
     kb_buttons.append([InlineKeyboardButton(text="⬅️ Назад", callback_data="back_shop")])
@@ -428,8 +502,7 @@ async def shop_category(call: CallbackQuery):
 async def back_shop(call: CallbackQuery):
     kb = InlineKeyboardMarkup(inline_keyboard=[
         [InlineKeyboardButton(text="🍔 Еда", callback_data="cat_hunger"), InlineKeyboardButton(text="💧 Вода", callback_data="cat_thirst")],
-        [InlineKeyboardButton(text="🎩 Аксессуары", callback_data="cat_wear"), InlineKeyboardButton(text="🍺 Бар", callback_data="cat_mood")],
-        [InlineKeyboardButton(text="💊 Аптека", callback_data="cat_heal"), InlineKeyboardButton(text="🛏 Уют", callback_data="cat_energy")]
+        [InlineKeyboardButton(text="👟 Брендовая одежда", callback_data="cat_wear")]
     ])
     await call.message.edit_text("🛒 **Магазин**\nВыбери категорию:", reply_markup=kb, parse_mode="Markdown")
 
@@ -459,7 +532,7 @@ async def inventory(message: Message):
     kb_buttons = []
     for item_id, count in inv.items():
         item_name = SHOP_ITEMS[item_id]['name']
-        kb_buttons.append([InlineKeyboardButton(text=f"{item_name} (x{count})", callback_data=f"use_{item_id}")])
+        kb_buttons.append([InlineKeyboardButton(text=f"Использовать {item_name} (x{count})", callback_data=f"use_{item_id}")])
     await message.answer("🎒 **Твой инвентарь**\nНажми, чтобы использовать/надеть:", reply_markup=InlineKeyboardMarkup(inline_keyboard=kb_buttons))
 
 @dp.callback_query(F.data.startswith("use_"))
@@ -486,9 +559,6 @@ async def use_item(call: CallbackQuery):
     if effect == "hunger": users[uid]['hunger'] = min(100, users[uid]['hunger'] + val)
     elif effect == "thirst": users[uid]['thirst'] = min(100, users[uid]['thirst'] + val)
     elif effect == "mood": users[uid]['mood'] = min(100, users[uid]['mood'] + val)
-    elif effect == "energy": users[uid]['energy'] = min(100, users[uid]['energy'] + val)
-    elif effect == "heal": users[uid]['is_sick'] = False
-    elif effect == "wash": users[uid]['is_dirty'] = False
 
     users[uid]['last_update'] = int(time.time())
     add_xp(users[uid], 5)
@@ -499,20 +569,7 @@ async def use_item(call: CallbackQuery):
     await send_card(call, users[uid], f"{action_text}\n{end_text}")
     await call.answer()
 
-# --- ЧАТ И АДМИНКА ---
-@dp.message(F.text == "💬 Поговорить")
-async def talk_to_pet(message: Message):
-    if is_spam(message.from_user.id): return
-    users = load_db(); uid = str(message.from_user.id)
-    if uid not in users or users[uid].get('is_dead'): return
-    if users[uid]['hunger'] < 30: return await message.answer(f"🍔 {users[uid]['pet_name']}: «Я голоден...»")
-    char = users[uid]['pet_char']
-    if char == "cute": p = ["Ты лучший! 🤍", "Обнимаю! 🤗", "Ты мое солнышко ☀️"]
-    elif char == "rude": p = ["Че пристал? 😒", "Дай поспать! 😤", "Опять ты? 🙄"]
-    elif char == "smart": p = ["У осьминога 3 сердца! 🧠", "Вода кипит при 100°C! 📚"]
-    else: p = ["ААА! БАНАНЫ! 🤪", "Я умею летать! 🚀"]
-    await message.answer(f"💬 {users[uid]['pet_name']}: «{random.choice(p)}»")
-
+# --- АДМИНКА ---
 @dp.message(Command("admin"))
 async def admin_panel(message: Message):
     if message.from_user.id != ADMIN_ID: return
@@ -525,13 +582,33 @@ async def admin_panel(message: Message):
 async def admin_user(call: CallbackQuery):
     if call.from_user.id != ADMIN_ID: return
     target = call.data.replace("adm_", "")
+    users = load_db()
+    is_dead = users.get(target, {}).get('is_dead', False)
+    revive_btn = [InlineKeyboardButton(text="🕯 Воскресить", callback_data=f"rev_{target}")] if is_dead else []
+    
     kb = InlineKeyboardMarkup(inline_keyboard=[
         [InlineKeyboardButton(text="+ 100 🪙", callback_data=f"gv_{target}_100")],
         [InlineKeyboardButton(text="+ 500 🪙", callback_data=f"gv_{target}_500")],
         [InlineKeyboardButton(text="✍️ Ввести сумму", callback_data=f"custom_give_{target}")],
+        *([revive_btn] if revive_btn else []),
         [InlineKeyboardButton(text="⬅️ Назад", callback_data="admin_back")]
     ])
     await call.message.edit_text(f"Действие для ID `{target}`:", reply_markup=kb, parse_mode="Markdown")
+
+@dp.callback_query(F.data.startswith("rev_"))
+async def admin_revive(call: CallbackQuery):
+    if call.from_user.id != ADMIN_ID: return
+    target = call.data.replace("rev_", "")
+    users = load_db()
+    if target in users:
+        users[target]['is_dead'] = False
+        users[target]['hunger'] = 100
+        users[target]['thirst'] = 100
+        users[target]['energy'] = 100
+        users[target]['mood'] = 100
+        save_db(users)
+        await call.answer("✅ Успешно воскрешен!")
+        await admin_user(call)
 
 @dp.callback_query(F.data == "admin_back")
 async def admin_back(call: CallbackQuery):
